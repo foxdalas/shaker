@@ -38,6 +38,12 @@
   version = "v0.0.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/pebbe/zmq4"
+  packages = ["."]
+  revision = "90d69e412a09549f2e90bac70fbb449081f1e5c1"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "f006c2ac4710855cf0f916dd6b77acf6b048dc6e"
@@ -82,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4828e865793fb2d03c8d7036c3b3e4a046d33e38994a4e95851e651d5ae079d5"
+  inputs-digest = "3264789de8b8c2a45d3e97bbfcddeea1b5b4d85654df63e03f4c79db9eeb39bc"
   solver-name = "gps-cdcl"
   solver-version = 1
