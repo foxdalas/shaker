@@ -24,11 +24,8 @@ func Version() string {
 }
 
 func main() {
-
-	s := shaker.New(Version())
+	s := shaker.New(config, Version())
 	s.Init()
-
-	//log := shaker.MakeLog()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -38,7 +35,6 @@ func main() {
 	})
 	r.Run("127.0.0.1:8080")
 }
-
 
 func JobJson(c *gin.Context) {
 	// returns a map[string]interface{} that can be marshalled as JSON

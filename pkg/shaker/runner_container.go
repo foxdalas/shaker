@@ -7,10 +7,14 @@ import (
 func CreateRunnerContainer(config Config, log *log.Entry) map[string]JobRunner {
 	var container = make(map[string]JobRunner)
 
-	container["once"] = &Once{}
+	container["once"] = &SingleRunner{}
+	container["reliable"] = &ReliableRunner{}
 
 	for _, runner := range container {
-		runner.Init(config, log)
+		err := runner.Init(config, log)
+		if err != nil {
+			log.Errorf("Error: %s", err)
+		}
 	}
 
 	return container

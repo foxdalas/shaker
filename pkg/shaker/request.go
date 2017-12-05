@@ -1,7 +1,14 @@
 package shaker
 
-import "net/http"
+import (
+	"net/http"
+	"io/ioutil"
+)
 
-func Fetch(url string) (resp *http.Response, err error) {
-	return http.Get(url)
+func Fetch(url string) error {
+	resp, err := http.Get(url)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	return err
 }
