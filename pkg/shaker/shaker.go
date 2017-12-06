@@ -1,14 +1,9 @@
 package shaker
 
 import (
-	//log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
-	//"io/ioutil"
-	//"net/http"
-	//"github.com/gin-gonic/gin"
-	//"time"
 )
 
 func New(config Config, version string) *Shaker {
