@@ -3,6 +3,7 @@ package shaker
 import (
 	log "github.com/sirupsen/logrus"
 	"sync"
+	"github.com/go-redis/redis"
 )
 
 type Shaker struct {
@@ -17,6 +18,8 @@ type Shaker struct {
 
 	stopCh    chan struct{}
 	waitGroup sync.WaitGroup
+
+	redisClient *redis.Client
 
 	Jobs []RunJob
 }
@@ -41,16 +44,24 @@ type Config struct {
 		Prefix string `json:"prefix"`
 		Config string `json:"config"`
 	} `json:"applications"`
+	Redis struct {
+		Host string `json:"host"`
+		Port string `json:"port"`
+		Password string `json:"password"`
+	} `json:"redis"`
 }
 
 type CronData []struct {
 	Name string `json:"name"`
 	Cron string `json:"cron"`
 	URI  string `json:"uri"`
+	LockTimeout int `json:"lock"`
 }
 
 type RunJob struct {
 	Name string
 	URL string
 	log *log.Entry
+	redisClient *redis.Client
+	lockTimeout int
 }

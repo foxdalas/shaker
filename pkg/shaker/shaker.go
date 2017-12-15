@@ -16,6 +16,10 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"time"
+	"github.com/go-redis/redis"
+	"github.com/bsm/redis-lock"
+	"crypto/md5"
+	"encoding/hex"
 )
 
 var _ shaker.Shaker = &Shaker{}
@@ -122,6 +126,8 @@ func (sh *Shaker) getCronList (configByte []byte) {
 	var config Config
 	yaml.Unmarshal(configByte, &config)
 
+	sh.redisClient = sh.redisConnect(config.Redis.Host, config.Redis.Port, config.Redis.Password)
+
 	for _, cronConfig := range config.Applications {
 		sh.Log().Infoln("Prefix", cronConfig.Prefix)
 		sh.Log().Infoln("Config", cronConfig.Config)
@@ -130,12 +136,22 @@ func (sh *Shaker) getCronList (configByte []byte) {
 			sh.Log().Fatalf("Cant't read config file %s", cronConfig.Config)
 		}
 		var cronData CronData
-		yaml.Unmarshal(configByte, &cronData)
+		err = yaml.Unmarshal(configByte, &cronData)
+		if err != nil {
+			sh.Log().Fatal(err)
+		}
 		for _, data := range cronData {
+			lockTimeout := 60
+			if data.LockTimeout > 0 {
+				lockTimeout = data.LockTimeout
+			}
+			sh.Log().Infof("Add job %s with lock timeout %d second", data.Name, lockTimeout)
 			jobrunner.Schedule(data.Cron, RunJob{
 				data.Name,
 				string(cronConfig.Prefix + data.URI),
 				sh.Log(),
+				sh.redisClient,
+				lockTimeout,
 			})
 		}
 
@@ -161,7 +177,35 @@ func (sh *Shaker) Run() {
 	}
 }
 
+func (sh *Shaker) redisConnect(host string, port string, password string) *redis.Client {
+	client := redis.NewClient(&redis.Options{
+		Addr: host + ":" + port,
+		Password: password, // no password set
+		DB:       0,  // use default DB
+	})
+
+	_, err := client.Ping().Result()
+	if err != nil {
+		sh.Log().Fatalf("Can't connect redis: %s", err)
+	}
+	return client
+}
+
 func (e RunJob) Run() {
+	locker := lock.New(e.redisClient, GetMD5Hash(e.URL), &lock.Options{
+		LockTimeout: time.Second * 600,
+		RetryCount: 0,
+		RetryDelay: time.Microsecond * 100})
+
+	// Try to obtain lock
+	hasLock, err := locker.Lock()
+	if err != nil {
+		e.log.Panic(err.Error())
+	} else if !hasLock {
+		e.log.Infof("Job %s is already locked", e.Name)
+		return
+	}
+
 	start := time.Now()
 	resp, err := http.Get(e.URL)
 	if err != nil {
@@ -187,4 +231,11 @@ func (sh *Shaker) GinLogger() gin.HandlerFunc {
 		c.Next()
 		sh.Log().Infof("Response code: %d Request URl: %s",c.Writer.Status(), c.Request.URL )
 	}
+}
+
+
+func GetMD5Hash(text string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	return hex.EncodeToString(hasher.Sum(nil))
 }
