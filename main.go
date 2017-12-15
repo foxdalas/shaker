@@ -1,9 +1,9 @@
 package main
 
 import (
-	"shaker/pkg/shaker"
+	"github.com/foxdalas/shaker/pkg/shaker"
+	"github.com/bamzi/jobrunner"
 	"github.com/gin-gonic/gin"
-	"shaker/config"
 )
 
 var AppVersion = "unknown"
@@ -24,16 +24,29 @@ func Version() string {
 }
 
 func main() {
-	var conf shaker.Config
-	config.ReadConfig("./config.json", &conf)
-	s := shaker.New(conf, Version())
-	s.Start()
+
+	s := shaker.New(Version())
+	s.Init()
+
+	//log := shaker.MakeLog()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	//r.Use(s.GinLogger(), gin.Recovery())
+	r.Use(s.GinLogger(), gin.Recovery())
 	r.GET("/ping", func(c *gin.Context) {
 		c.Data(200, "text/plain", []byte("pong"))
 	})
 	r.Run("127.0.0.1:8080")
+}
+
+
+func JobJson(c *gin.Context) {
+	// returns a map[string]interface{} that can be marshalled as JSON
+	c.JSON(200, jobrunner.StatusJson())
+}
+
+func JobHtml(c *gin.Context) {
+	// Returns the template data pre-parsed
+	c.HTML(200, "", jobrunner.StatusPage())
+
 }
