@@ -124,37 +124,49 @@ func (sh *Shaker) getCronList (configByte []byte) {
 
 	jobrunner.Start()
 	var config Config
-	yaml.Unmarshal(configByte, &config)
+	err := yaml.Unmarshal(configByte, &config)
+	if err != nil {
+		sh.log.Fatal(err)
+	}
 
 	sh.redisClient = sh.redisConnect(config.Redis.Host, config.Redis.Port, config.Redis.Password)
 
-	for _, cronConfig := range config.Applications {
-		sh.Log().Infoln("Prefix", cronConfig.Prefix)
-		sh.Log().Infoln("Config", cronConfig.Config)
-		configByte, err := ioutil.ReadFile(cronConfig.Config)
+
+	//Reading HTTP Jobs
+
+	sh.log.Infof("Reading directory %s", )
+	files, err := ioutil.ReadDir(config.Jobs.Http.Dir)
+	if err != nil {
+		sh.log.Fatal(err)
+	}
+
+	for _, file := range files {
+		sh.Log().Infof("Reading file for HTTP jobs %s",config.Jobs.Http.Dir + "/"+file.Name())
+		configByte, err := ioutil.ReadFile(config.Jobs.Http.Dir + "/" + file.Name())
 		if err != nil {
-			sh.Log().Fatalf("Cant't read config file %s", cronConfig.Config)
+			sh.Log().Fatalf("Cant't read config file %s", config.Jobs.Http.Dir +"/"+file.Name())
 		}
-		var cronData CronData
-		err = yaml.Unmarshal(configByte, &cronData)
+		var httpJobs HTTPJobs
+		err = yaml.Unmarshal(configByte, &httpJobs)
 		if err != nil {
 			sh.Log().Fatal(err)
 		}
-		for _, data := range cronData {
-			lockTimeout := 60
+		for _, data := range httpJobs.Jobs {
+			lockTimeout := 30
 			if data.LockTimeout > 0 {
 				lockTimeout = data.LockTimeout
 			}
 			sh.Log().Infof("Add job %s with lock timeout %d second", data.Name, lockTimeout)
 			jobrunner.Schedule(data.Cron, RunJob{
 				data.Name,
-				string(cronConfig.Prefix + data.URI),
+				string(httpJobs.URL + data.URI),
+				"http",
+				"get",
 				sh.Log(),
 				sh.redisClient,
 				lockTimeout,
 			})
 		}
-
 	}
 }
 
@@ -226,13 +238,14 @@ func (e RunJob) Run() {
 	e.log.Info(string(body))
 }
 
+
+
 func (sh *Shaker) GinLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 		sh.Log().Infof("Response code: %d Request URl: %s",c.Writer.Status(), c.Request.URL )
 	}
 }
-
 
 func GetMD5Hash(text string) string {
 	hasher := md5.New()

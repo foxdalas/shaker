@@ -40,27 +40,37 @@ type Config struct {
 			} `json:"pubsub"`
 		} `json:"redis"`
 	} `json:"storage"`
-	Applications []struct {
-		Prefix string `json:"prefix"`
-		Config string `json:"config"`
-	} `json:"applications"`
 	Redis struct {
-		Host string `json:"host"`
-		Port string `json:"port"`
+		Host     string `json:"host"`
+		Port     string `json:"port"`
 		Password string `json:"password"`
 	} `json:"redis"`
+	Jobs struct {
+		Http struct {
+			Dir string `json:"dir"`
+		} `json:"http"`
+		Redis struct {
+			Dir string `json:"dir"`
+		} `json:"redis"`
+	} `json:"jobs"`
 }
 
-type CronData []struct {
-	Name string `json:"name"`
-	Cron string `json:"cron"`
-	URI  string `json:"uri"`
-	LockTimeout int `json:"lock"`
+type HTTPJobs struct {
+	URL  string `json:"url"`
+	Jobs []struct {
+		Name string `json:"name"`
+		Cron string `json:"cron"`
+		URI  string `json:"uri"`
+		LockTimeout int `json:"lock"`
+		Method string `json:"method"`
+	} `json:"jobs"`
 }
 
 type RunJob struct {
 	Name string
 	URL string
+	Type string
+	Method string
 	log *log.Entry
 	redisClient *redis.Client
 	lockTimeout int
