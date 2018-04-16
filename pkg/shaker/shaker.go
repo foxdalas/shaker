@@ -45,16 +45,6 @@ func (sh *Shaker) Init() {
 
 func (sh *Shaker) params() error {
 
-	sh.bitbucketUser = os.Getenv("BITBUCKET_USERNAME")
-	if len(sh.bitbucketUser) == 0 {
-		return errors.New("Please provide the secret key via environment variable BITBUCKET_USERNAME")
-	}
-
-	sh.bitbucketPassword = os.Getenv("BITBUCKET_PASSWORD")
-	if len(sh.bitbucketPassword) == 0 {
-		return errors.New("Please provide the secret key via environment variable BITBUCKET_PASSWORD")
-	}
-
 	sh.configFile = os.Getenv("CONFIG")
 	if len(sh.configFile) == 0 {
 		return errors.New("Please provide the secret key via environment variable CONFIG")
