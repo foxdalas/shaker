@@ -60,7 +60,10 @@ func MakeLog() *log.Entry {
 	}
 
 	if logtype == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
+		log.SetFormatter(&log.JSONFormatter{
+			FieldMap: log.FieldMap{
+				log.FieldKeyMsg: "message",
+			}})
 	} else if logtype == "text" {
 		log.SetFormatter(&log.TextFormatter{})
 	} else {
@@ -146,13 +149,24 @@ func (sh *Shaker) getCronList (configByte []byte) {
 			}
 			sh.Log().Infof("Add job %s with lock timeout %d second from file %s", data.Name, lockTimeout, jobFile)
 
+
+			username := ""
+			password := ""
+
+			if len(data.Username) > 0 {
+				username = data.Username
+				if len(config.Users[username].Password) > 0 {
+					password = config.Users[username].Password
+				}
+			}
+
 			jobrunner.Schedule(data.Cron, RunJob{
 				data.Name,
 				string(httpJobs.URL + data.URI),
 				"http",
 				"get",
-				data.Username,
-				data.Password,
+				username,
+				password,
 				sh.Log(),
 				sh.redisClient,
 				lockTimeout,
@@ -199,8 +213,12 @@ func (e RunJob) Run() {
 	// Try to obtain lock
 	hasLock, err := locker.Lock()
 	if err != nil {
-		e.log.Panic(err.Error())
+		e.log.Error(err)
 	} else if !hasLock {
+		e.log = log.WithFields(log.Fields{
+			"context": "shaker",
+			"request": e.URL,
+		})
 		e.log.Infof("Job %s is already locked", e.Name)
 		return
 	}
@@ -217,23 +235,25 @@ func (e RunJob) Run() {
 	resp, err := cli.Do(req)
 	if err != nil {
 		e.log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
 	elapsed := time.Since(start).Seconds()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		e.log.Errorf("Error: %s", err)
+		return
 	}
 	e.log = log.WithFields(log.Fields{
 		"context": "shaker",
-		"response": resp.StatusCode,
+		"response_code": resp.StatusCode,
+		"response": body,
 		"response_time": elapsed,
 		"request": e.URL,
+		"method": "GET",
+		"username": e.Username,
 	})
-	e.log.Info(string(body))
 }
-
-
 
 func (sh *Shaker) GinLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -247,7 +267,6 @@ func GetMD5Hash(text string) string {
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
-
 
 func (sh *Shaker) watchJobs(configByte []byte) {
 	var config Config

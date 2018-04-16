@@ -15,12 +15,9 @@ type Shaker struct {
 	bitbucketPassword string
 
 	configFile string
-
 	stopCh    chan struct{}
 	waitGroup sync.WaitGroup
-
 	redisClient *redis.Client
-
 	Jobs []RunJob
 
 
@@ -54,6 +51,13 @@ type Config struct {
 			Dir string `json:"dir"`
 		} `json:"redis"`
 	} `json:"jobs"`
+	Users map[string]User `json:"Users"`
+}
+
+
+type User struct {
+	User string
+	Password string
 }
 
 type HTTPJobs struct {
