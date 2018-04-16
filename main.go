@@ -2,13 +2,18 @@ package main
 
 import (
 	"github.com/foxdalas/shaker/pkg/shaker"
+
+	"os"
+	"os/signal"
+	"syscall"
+	"github.com/sirupsen/logrus"
 	"github.com/bamzi/jobrunner"
-	"github.com/gin-gonic/gin"
 )
 
 var AppVersion = "unknown"
 var AppGitCommit = ""
 var AppGitState = ""
+var stopCh    chan struct{}
 
 func Version() string {
 	version := AppVersion
@@ -24,29 +29,22 @@ func Version() string {
 }
 
 func main() {
+	jobrunner.Start()
 
 	s := shaker.New(Version())
-	s.Init()
+	go s.Init()
 
-	//log := shaker.MakeLog()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	signal := <-c
+	logger := logrus.WithField("signal", signal.String())
+	logger.Debug("received signal")
+	Stop()
 
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.New()
-	r.Use(s.GinLogger(), gin.Recovery())
-	r.GET("/ping", func(c *gin.Context) {
-		c.Data(200, "text/plain", []byte("pong"))
-	})
-	r.Run("127.0.0.1:8080")
 }
 
-
-func JobJson(c *gin.Context) {
-	// returns a map[string]interface{} that can be marshalled as JSON
-	c.JSON(200, jobrunner.StatusJson())
-}
-
-func JobHtml(c *gin.Context) {
-	// Returns the template data pre-parsed
-	c.HTML(200, "", jobrunner.StatusPage())
-
+func Stop() {
+	logrus.Info("shutting things down")
+	stopCh := make(chan struct{})
+	close(stopCh)
 }

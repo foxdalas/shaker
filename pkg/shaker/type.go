@@ -4,17 +4,17 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"github.com/go-redis/redis"
+
 )
 
 type Shaker struct {
-
 	version string
 	log     *log.Entry
 
-	bitbucketUser string
+	bitbucketUser     string
 	bitbucketPassword string
 
-	configFile  string
+	configFile string
 
 	stopCh    chan struct{}
 	waitGroup sync.WaitGroup
@@ -22,13 +22,14 @@ type Shaker struct {
 	redisClient *redis.Client
 
 	Jobs []RunJob
-}
 
+
+}
 
 type Config struct {
 	Environment string `json:"environment"`
 	Role        string `json:"role"`
-	Storage     struct {
+	Storage struct {
 		Redis struct {
 			Memory struct {
 				Host string `json:"host"`
@@ -57,21 +58,28 @@ type Config struct {
 
 type HTTPJobs struct {
 	URL  string `json:"url"`
-	Jobs []struct {
-		Name string `json:"name"`
-		Cron string `json:"cron"`
-		URI  string `json:"uri"`
-		LockTimeout int `json:"lock"`
-		Method string `json:"method"`
-	} `json:"jobs"`
+	Jobs []Job  `json:"jobs"`
+}
+
+type Job struct {
+	Name        string `json:"name"`
+	Cron        string `json:"cron"`
+	URI         string `json:"uri"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	LockTimeout int    `json:"lock"`
+	Method      string `json:"method"`
 }
 
 type RunJob struct {
-	Name string
-	URL string
-	Type string
-	Method string
-	log *log.Entry
+	Name        string
+	URL         string
+	Type        string
+	Method      string
+	Username    string
+	Password    string
+	log         *log.Entry
 	redisClient *redis.Client
 	lockTimeout int
+	jobFile string
 }
