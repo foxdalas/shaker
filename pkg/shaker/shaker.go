@@ -206,15 +206,12 @@ func (sh *Shaker) redisConnect(host string, port string, password string) *redis
 
 func (e RunJob) Run() {
 	locker := lock.New(e.redisClient, GetMD5Hash(e.URL), &lock.Options{
-		LockTimeout: time.Second * 600,
+		LockTimeout: time.Second * 300,
 		RetryCount: 0,
 		RetryDelay: time.Microsecond * 100})
 
 	// Try to obtain lock
-	hasLock, err := locker.Lock()
-	if err != nil {
-		e.log.Error(err)
-	} else if !hasLock {
+	if locker.IsLocked() {
 		e.log = log.WithFields(log.Fields{
 			"context": "shaker",
 			"request": e.URL,
