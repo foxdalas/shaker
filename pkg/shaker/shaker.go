@@ -144,6 +144,7 @@ func (e RunJob) Run() {
 	resp, err := cli.Do(req)
 	if err != nil {
 		e.log = log.WithFields(log.Fields{
+			"description": e.Name,
 			"context":  "shaker",
 			"error":    err,
 			"request":  e.URL,
