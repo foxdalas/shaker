@@ -19,6 +19,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/fsnotify/fsnotify"
+	"github.com/prometheus/promu/util/sh"
 )
 
 var _ shaker.Shaker = &Shaker{}
@@ -235,12 +236,12 @@ func (e RunJob) Run() {
 	resp, err := cli.Do(req)
 	if err != nil {
 		e.log = log.WithFields(log.Fields{
-			"context": "shaker",
-			"error": err,
-			"request": e.URL,
-			"method": "GET",
+			"context":  "shaker",
+			"error":    err,
+			"request":  e.URL,
+			"method":   "GET",
 			"username": e.Username,
-		)}
+		})
 		return
 	}
 	defer resp.Body.Close()
