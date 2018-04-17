@@ -64,7 +64,7 @@ func MakeLog() *log.Entry {
 			TimestampFormat: time.RFC3339Nano,
 			FieldMap: log.FieldMap{
 				log.FieldKeyMsg: "message",
-				log.FieldKeyTime: "@timestamp",
+				log.FieldKeyTime: "timestamp",
 			}})
 	} else if logtype == "text" {
 		log.SetFormatter(&log.TextFormatter{})
