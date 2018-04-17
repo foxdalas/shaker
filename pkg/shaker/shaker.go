@@ -234,7 +234,13 @@ func (e RunJob) Run() {
 	cli := &http.Client{}
 	resp, err := cli.Do(req)
 	if err != nil {
-		e.log.Error(err)
+		e.log = log.WithFields(log.Fields{
+			"context": "shaker",
+			"error": err,
+			"request": e.URL,
+			"method": "GET",
+			"username": e.Username,
+		)}
 		return
 	}
 	defer resp.Body.Close()
