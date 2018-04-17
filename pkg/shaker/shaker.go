@@ -19,7 +19,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/fsnotify/fsnotify"
-	"github.com/prometheus/promu/util/sh"
 )
 
 var _ shaker.Shaker = &Shaker{}
