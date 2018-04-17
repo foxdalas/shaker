@@ -211,7 +211,6 @@ func (e RunJob) Run() {
 		RetryCount: 0,
 		RetryDelay: time.Microsecond * 100})
 
-	// Try to obtain lock
 	if locker.IsLocked() {
 		e.log = log.WithFields(log.Fields{
 			"context": "shaker",
@@ -239,6 +238,7 @@ func (e RunJob) Run() {
 			"method":   "GET",
 			"username": e.Username,
 		})
+		e.log.Error(err)
 		return
 	}
 	defer resp.Body.Close()
@@ -251,12 +251,12 @@ func (e RunJob) Run() {
 	e.log = log.WithFields(log.Fields{
 		"context": "shaker",
 		"response_code": resp.StatusCode,
-		"response": body,
 		"response_time": elapsed,
 		"request": e.URL,
 		"method": "GET",
 		"username": e.Username,
 	})
+	e.log.Info(body)
 }
 
 func (sh *Shaker) GinLogger() gin.HandlerFunc {
