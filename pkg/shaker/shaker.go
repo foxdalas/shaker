@@ -256,7 +256,7 @@ func (e RunJob) Run() {
 		"method": "GET",
 		"username": e.Username,
 	})
-	e.log.Info(body)
+	e.log.Info(string(body))
 }
 
 func (sh *Shaker) GinLogger() gin.HandlerFunc {
