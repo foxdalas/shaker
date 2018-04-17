@@ -11,6 +11,8 @@ type Shaker struct {
 	version string
 	log     *log.Entry
 
+	Config *Config
+
 	bitbucketUser     string
 	bitbucketPassword string
 
@@ -19,8 +21,6 @@ type Shaker struct {
 	waitGroup sync.WaitGroup
 	redisClient *redis.Client
 	Jobs []RunJob
-
-
 }
 
 type Config struct {

@@ -6,16 +6,13 @@ import (
 	"os"
 	"github.com/foxdalas/shaker/pkg/shaker_const"
 	"io/ioutil"
-	"gopkg.in/yaml.v2"
-	"encoding/json"
 	"errors"
 	"github.com/bamzi/jobrunner"
 	"net/http"
-	"github.com/gin-gonic/gin"
 	"time"
-	"github.com/go-redis/redis"
 	"github.com/bsm/redis-lock"
 	"github.com/fsnotify/fsnotify"
+	"encoding/json"
 )
 
 var _ shaker.Shaker = &Shaker{}
@@ -29,96 +26,78 @@ func New(version string) *Shaker {
 	}
 }
 
-func (sh *Shaker) Init() {
-	sh.Log().Infof("Shaker %s starting", sh.version)
+func (s *Shaker) Init() {
+	s.Log().Infof("Shaker %s starting", s.version)
 
-	err := sh.params()
+	err := s.params()
 	if err != nil {
-		sh.Log().Fatal(err)
+		s.Log().Fatal(err)
 	}
-	sh.getCronList(sh.getShakerConfig(sh.configFile))
-	go sh.watchJobs(sh.getShakerConfig(sh.configFile))
+
+	s.getConfig()
+	s.getCronList()
+
+	go s.watchJobs()
 }
 
-func (sh *Shaker) params() error {
-
-	sh.configFile = os.Getenv("CONFIG")
-	if len(sh.configFile) == 0 {
+func (s *Shaker) params() error {
+	s.configFile = os.Getenv("CONFIG")
+	if len(s.configFile) == 0 {
 		return errors.New("Please provide the secret key via environment variable CONFIG")
 	}
-
 	return nil
 }
 
 
-func (sh *Shaker) getShakerConfig (file string) []byte {
-	conigByte, err := ioutil.ReadFile(file)
-	if err != nil {
-		sh.Log().Fatalf("Cant't read config file %s", file)
-	}
-
-	var config Config
-	yaml.Unmarshal(conigByte, &config)
-	byteConfig, _ := json.Marshal(config)
-
-	return []byte(byteConfig)
-}
-
-func (sh *Shaker) getCronList (configByte []byte) {
-	var config Config
-	err := yaml.Unmarshal(configByte, &config)
-	if err != nil {
-		sh.log.Fatal(err)
-		return
-	}
-
-	sh.redisClient = sh.redisConnect(config.Redis.Host, config.Redis.Port, config.Redis.Password)
+func (s *Shaker) getCronList() {
+	s.redisClient = s.redisConnect(s.Config.Redis.Host, s.Config.Redis.Port, s.Config.Redis.Password)
 
 	//Reading HTTP Jobs
-	sh.log.Infof("Reading directory %s", config.Jobs.Http.Dir)
-	files, err := ioutil.ReadDir(config.Jobs.Http.Dir)
+	s.log.Infof("Reading directory %s", s.Config.Jobs.Http.Dir)
+	files, err := ioutil.ReadDir(s.Config.Jobs.Http.Dir)
 	if err != nil {
-		sh.log.Fatal(err)
+		s.log.Fatal(err)
 		return
 	}
 
-	validate := sh.validaConfigs(config)
-	if !validate {
-		sh.Log().Error("Error in configration")
+	if !s.validateConfigs() {
+		s.Log().Error("Error in configration")
 		return
 	}
 
 	for _, job := range jobrunner.Entries() {
-		sh.Log().Infof("Cleanup job with id %d", job.ID)
+		s.Log().Infof("Cleanup job with id %d", job.ID)
 		jobrunner.Remove(job.ID)
 	}
 
 	for _, file := range files {
-		jobFile := config.Jobs.Http.Dir +"/"+file.Name()
-		sh.Log().Infof("Reading file for HTTP jobs %s",jobFile)
+		jobFile := s.Config.Jobs.Http.Dir +"/"+file.Name()
+		s.Log().Infof("Reading file for HTTP jobs %s",jobFile)
 		configByte, err := ioutil.ReadFile(jobFile)
 		if err != nil {
-			sh.Log().Fatalf("Cant't read config file %s", jobFile)
+			s.Log().Fatalf("Cant't read config file %s", jobFile)
 		}
+
 		var httpJobs HTTPJobs
-		err = yaml.Unmarshal(configByte, &httpJobs)
+		err = json.Unmarshal(configByte, &httpJobs)
 		if err != nil {
-			sh.Log().Fatal(err)
+			s.Log().Fatal(err)
 		}
+
 		for _, data := range httpJobs.Jobs {
 			lockTimeout := 30
 			if data.LockTimeout > 0 {
 				lockTimeout = data.LockTimeout
 			}
-			sh.Log().Infof("Add job %s with lock timeout %d second from file %s", data.Name, lockTimeout, jobFile)
+			s.Log().Infof("Add job %s with lock timeout %d second from file %s", data.Name, lockTimeout, jobFile)
 
 			username := ""
 			password := ""
 
 			if len(data.Username) > 0 {
 				username = data.Username
-				if len(config.Users[username].Password) > 0 {
-					password = config.Users[username].Password
+				if len(s.Config.Users[username].Password) > 0 {
+					password = s.Config.Users[username].Password
 				}
 			}
 
@@ -129,27 +108,13 @@ func (sh *Shaker) getCronList (configByte []byte) {
 				"get",
 				username,
 				password,
-				sh.Log(),
-				sh.redisClient,
+				s.Log(),
+				s.redisClient,
 				lockTimeout,
 				jobFile,
 			})
 		}
 	}
-}
-
-func (sh *Shaker) redisConnect(host string, port string, password string) *redis.Client {
-	client := redis.NewClient(&redis.Options{
-		Addr: host + ":" + port,
-		Password: password, // no password set
-		DB:       0,  // use default DB
-	})
-
-	_, err := client.Ping().Result()
-	if err != nil {
-		sh.Log().Fatalf("Can't connect redis: %s", err)
-	}
-	return client
 }
 
 func (e RunJob) Run() {
@@ -206,20 +171,7 @@ func (e RunJob) Run() {
 	e.log.Info(string(body))
 }
 
-func (sh *Shaker) GinLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-		sh.Log().Infof("Response code: %d Request URl: %s",c.Writer.Status(), c.Request.URL )
-	}
-}
-
-
-func (sh *Shaker) watchJobs(configByte []byte) {
-	var config Config
-	err := yaml.Unmarshal(configByte, &config)
-	if err != nil {
-		sh.log.Fatal(err)
-	}
+func (s *Shaker) watchJobs() {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -232,43 +184,18 @@ func (sh *Shaker) watchJobs(configByte []byte) {
 		for {
 			select {
 			case event := <-watcher.Events:
-				sh.Log().Infof("event:", event.String())
-				sh.getCronList(configByte)
+				s.Log().Infof("event:", event.String())
+				s.getCronList()
 			case err := <-watcher.Errors:
-				sh.Log().Errorf("error:", err)
+				s.Log().Errorf("error:", err)
 			}
 		}
 	}()
 
-	err = watcher.Add(config.Jobs.Http.Dir)
+	err = watcher.Add(s.Config.Jobs.Http.Dir)
 	if err != nil {
 		log.Fatal(err)
 	}
 	<-done
-}
-
-func (sh *Shaker) validaConfigs(config Config) bool {
-	sh.log.Infof("Reading directory %s", config.Jobs.Http.Dir)
-	files, err := ioutil.ReadDir(config.Jobs.Http.Dir)
-	if err != nil {
-		return false
-	}
-
-	for _, file := range files {
-		jobFile := config.Jobs.Http.Dir + "/" + file.Name()
-		sh.Log().Infof("Reading file for HTTP jobs %s", jobFile)
-		configByte, err := ioutil.ReadFile(jobFile)
-		if err != nil {
-			sh.Log().Fatalf("Cant't read config file %s", jobFile)
-			return false
-		}
-		var httpJobs HTTPJobs
-		err = yaml.Unmarshal(configByte, &httpJobs)
-		if err != nil {
-			sh.Log().Error(err)
-			return false
-		}
-	}
-	return true
 }
 

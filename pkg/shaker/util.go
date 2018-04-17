@@ -2,6 +2,7 @@ package shaker
 
 import (
 	log "github.com/sirupsen/logrus"
+	"github.com/go-redis/redis"
 	"strings"
 	"os"
 	"time"
@@ -46,16 +47,16 @@ func MakeLog() *log.Entry {
 	return log.WithField("context", "shaker")
 }
 
-func (sh *Shaker) Log() *log.Entry {
-	return sh.log
+func (s *Shaker) Log() *log.Entry {
+	return s.log
 }
 
-func (sh *Shaker) Version() string {
-	return sh.version
+func (s *Shaker) Version() string {
+	return s.version
 }
 
-func (sh *Shaker) Run() {
-	for _, job := range sh.Jobs {
+func (s *Shaker) Run() {
+	for _, job := range s.Jobs {
 		go job.Run()
 	}
 }
@@ -73,4 +74,18 @@ func urlFormater(url string, uri string) string {
 	} else {
 		return url + uri
 	}
+}
+
+func (s *Shaker) redisConnect(host string, port string, password string) *redis.Client {
+	client := redis.NewClient(&redis.Options{
+		Addr: host + ":" + port,
+		Password: password, // no password set
+		DB:       0,  // use default DB
+	})
+
+	_, err := client.Ping().Result()
+	if err != nil {
+		s.Log().Fatalf("Can't connect redis: %s", err)
+	}
+	return client
 }
