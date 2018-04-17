@@ -61,8 +61,10 @@ func MakeLog() *log.Entry {
 
 	if logtype == "json" {
 		log.SetFormatter(&log.JSONFormatter{
+			TimestampFormat: time.RFC3339Nano,
 			FieldMap: log.FieldMap{
 				log.FieldKeyMsg: "message",
+				log.FieldKeyTime: "@timestamp",
 			}})
 	} else if logtype == "text" {
 		log.SetFormatter(&log.TextFormatter{})
@@ -148,7 +150,6 @@ func (sh *Shaker) getCronList (configByte []byte) {
 				lockTimeout = data.LockTimeout
 			}
 			sh.Log().Infof("Add job %s with lock timeout %d second from file %s", data.Name, lockTimeout, jobFile)
-
 
 			username := ""
 			password := ""
