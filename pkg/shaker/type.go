@@ -21,6 +21,8 @@ type Shaker struct {
 	waitGroup sync.WaitGroup
 	redisClient *redis.Client
 	Jobs []RunJob
+
+	RedisStorages map[string]*redis.Client
 }
 
 type Config struct {
@@ -48,20 +50,26 @@ type Config struct {
 			Dir string `json:"dir"`
 		} `json:"http"`
 		Redis struct {
+			Storages map[string]RedisStorage `json:"Storages"`
 			Dir string `json:"dir"`
 		} `json:"redis"`
 	} `json:"jobs"`
 	Users map[string]User `json:"Users"`
 }
 
+type RedisStorage struct {
+	Host string
+	Port string
+}
 
 type User struct {
 	User string
 	Password string
 }
 
-type HTTPJobs struct {
+type Jobs struct {
 	URL  string `json:"url"`
+	Redis string `json:"redis"`
 	Jobs []Job  `json:"jobs"`
 }
 
@@ -73,17 +81,25 @@ type Job struct {
 	Password    string `json:"password"`
 	LockTimeout int    `json:"lock"`
 	Method      string `json:"method"`
+	Channel string `json:"channel"`
+	Message string `json:"message"`
+
+
 }
 
 type RunJob struct {
 	Name        string
 	URL         string
+	RedisClient	string
 	Type        string
 	Method      string
 	Username    string
 	Password    string
+	Channel     string
+	Message     string
 	log         *log.Entry
-	redisClient *redis.Client
+	redisLock 	*redis.Client
 	lockTimeout int
 	jobFile string
+	redisStorage *redis.Client
 }

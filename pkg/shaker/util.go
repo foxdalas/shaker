@@ -69,11 +69,14 @@ func GetMD5Hash(text string) string {
 
 
 func urlFormater(url string, uri string) string {
-	if url[len(url)-1:] != "/" && uri[:1] != "/" {
-		return url + "/" + uri
-	} else {
-		return url + uri
+	if len(url) > 0 && len(uri) > 0 {
+		if url[len(url)-1:] != "/" && uri[:1] != "/" {
+			return url + "/" + uri
+		} else {
+			return url + uri
+		}
 	}
+	return ""
 }
 
 func (s *Shaker) redisConnect(host string, port string, password string) *redis.Client {
