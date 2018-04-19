@@ -1,13 +1,13 @@
 package shaker
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/go-redis/redis"
-	"strings"
-	"os"
-	"time"
-	"encoding/hex"
 	"crypto/md5"
+	"encoding/hex"
+	"github.com/go-redis/redis"
+	log "github.com/sirupsen/logrus"
+	"os"
+	"strings"
+	"time"
 )
 
 func MakeLog() *log.Entry {
@@ -20,7 +20,7 @@ func MakeLog() *log.Entry {
 		log.SetFormatter(&log.JSONFormatter{
 			TimestampFormat: time.RFC3339Nano,
 			FieldMap: log.FieldMap{
-				log.FieldKeyMsg: "message",
+				log.FieldKeyMsg:  "message",
 				log.FieldKeyTime: "@timestamp",
 			}})
 	} else if logtype == "text" {
@@ -67,23 +67,21 @@ func GetMD5Hash(text string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-
 func urlFormater(url string, uri string) string {
 	if len(url) > 0 && len(uri) > 0 {
 		if url[len(url)-1:] != "/" && uri[:1] != "/" {
 			return url + "/" + uri
-		} else {
-			return url + uri
 		}
+		return url + uri
 	}
 	return ""
 }
 
 func (s *Shaker) redisConnect(host string, port string, password string) *redis.Client {
 	client := redis.NewClient(&redis.Options{
-		Addr: host + ":" + port,
+		Addr:     host + ":" + port,
 		Password: password, // no password set
-		DB:       0,  // use default DB
+		DB:       0,        // use default DB
 	})
 
 	_, err := client.Ping().Result()

@@ -1,12 +1,12 @@
 package shaker
 
 import (
-	log "github.com/sirupsen/logrus"
-	"sync"
-	"os"
-	"github.com/foxdalas/shaker/pkg/shaker_const"
 	"errors"
+	"github.com/foxdalas/shaker/pkg/shaker_const"
 	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
+	"os"
+	"sync"
 )
 
 var _ shaker.Shaker = &Shaker{}
@@ -74,7 +74,7 @@ func (s *Shaker) watchJobs() {
 				s.Log().Infof("event:", event.String())
 				s.getCronList()
 			case err := <-watcher.Errors:
-				s.Log().Errorf("error:", err)
+				s.Log().Errorf("error: %s", err)
 			}
 		}
 	}()
@@ -85,4 +85,3 @@ func (s *Shaker) watchJobs() {
 	}
 	<-done
 }
-

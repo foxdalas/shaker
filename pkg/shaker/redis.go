@@ -10,7 +10,7 @@ func (s *Shaker) createRedisConnections() {
 
 	for name, info := range s.Config.Jobs.Redis.Storages {
 		connections[name] = redis.NewClient(&redis.Options{
-			Addr:     info.Host + ":" + info.Port,
+			Addr: info.Host + ":" + info.Port,
 		})
 	}
 

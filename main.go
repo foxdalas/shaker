@@ -3,17 +3,17 @@ package main
 import (
 	"github.com/foxdalas/shaker/pkg/shaker"
 
+	"github.com/bamzi/jobrunner"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
-	"github.com/sirupsen/logrus"
-	"github.com/bamzi/jobrunner"
 )
 
 var AppVersion = "unknown"
 var AppGitCommit = ""
 var AppGitState = ""
-var stopCh    chan struct{}
+var stopCh chan struct{}
 
 func Version() string {
 	version := AppVersion

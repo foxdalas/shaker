@@ -7,9 +7,7 @@ import (
 type Shaker interface {
 	Version() string
 	Log() *logrus.Entry
-
 }
 
 type Bitbucket interface {
-
 }

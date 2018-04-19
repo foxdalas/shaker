@@ -1,10 +1,12 @@
 package shaker
 
 import (
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"encoding/json"
 	"github.com/bamzi/jobrunner"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"github.com/bsm/redis-lock"
+	"time"
 )
 
 func (s *Shaker) getConfig() {
@@ -59,7 +61,6 @@ func (s *Shaker) validateConfigs(jobType string) bool {
 
 	return true
 }
-
 
 func (s *Shaker) readConfigDirectory(dir string, jobType string) {
 	var jobs Jobs
@@ -117,7 +118,6 @@ func findRedisType(method string) string {
 	return "default"
 }
 
-
 func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
 	for _, data := range jobs.Jobs {
 		lockTimeout := 0
@@ -139,6 +139,12 @@ func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
 			}
 		}
 
+		locker := *lock.New(s.redisClient, GetMD5Hash(urlFormater(jobs.URL, data.URI)), &lock.Options{
+			LockTimeout: time.Duration(lockTimeout) * time.Second,
+			RetryCount:  0,
+			RetryDelay:  time.Microsecond * 100})
+		defer locker.Unlock()
+
 		jobrunner.Schedule(data.Cron, RunJob{
 			data.Name,
 			urlFormater(jobs.URL, data.URI),
@@ -150,8 +156,7 @@ func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
 			data.Channel,
 			data.Message,
 			s.Log(),
-			s.redisClient,
-			lockTimeout,
+			locker,
 			jobFile,
 			s.RedisStorages[findRedisType(data.Method)],
 		})
