@@ -96,7 +96,7 @@ type RunJob struct {
 	Channel      string
 	Message      string
 	log          *log.Entry
-	lock		 lock.Locker
+	lock		 *lock.Locker
 	jobFile      string
 	redisStorage *redis.Client
 }

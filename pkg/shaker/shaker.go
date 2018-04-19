@@ -45,7 +45,7 @@ func (s *Shaker) params() error {
 
 func (s *Shaker) getCronList() {
 	s.redisClient = s.redisConnect(s.Config.Redis.Host, s.Config.Redis.Port, s.Config.Redis.Password)
-
+	
 	//Checking configuration
 	if !s.isValidConfig() {
 		s.Log().Error("Error in configration")

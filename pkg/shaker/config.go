@@ -139,11 +139,10 @@ func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
 			}
 		}
 
-		locker := *lock.New(s.redisClient, GetMD5Hash(urlFormater(jobs.URL, data.URI)), &lock.Options{
+		locker := lock.New(s.redisClient, GetMD5Hash(urlFormater(jobs.URL, data.URI)), &lock.Options{
 			LockTimeout: time.Duration(lockTimeout) * time.Second,
 			RetryCount:  0,
 			RetryDelay:  time.Microsecond * 100})
-		defer locker.Unlock()
 
 		jobrunner.Schedule(data.Cron, RunJob{
 			data.Name,

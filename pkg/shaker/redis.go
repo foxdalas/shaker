@@ -26,31 +26,21 @@ func (s *Shaker) createRedisConnections() {
 }
 
 func makeRedis(e RunJob) {
+	e.log = log.WithFields(log.Fields{
+		"description": e.Name,
+		"context":     "shaker",
+		"channel":     e.Channel,
+		"method":      e.Method,
+		"type":        "redis",
+	})
 
 	if e.Method == "publish" {
 		client := e.redisStorage
 		err := client.Publish(e.Channel, e.Message).Err()
 		if err != nil {
-			e.log = log.WithFields(log.Fields{
-				"description": e.Name,
-				"context":     "shaker",
-				"error":       err,
-				"channel":     e.Channel,
-				"method":      "publish",
-				"type":        "redis",
-			})
 			e.log.Error(err)
 			return
 		}
-
-		e.log = log.WithFields(log.Fields{
-			"description": e.Name,
-			"context":     "shaker",
-			"channel":     e.Channel,
-			"method":      "publish",
-			"type":        "redis",
-			"message":     "ok",
-		})
-		e.log.Info(err)
+		e.log.Info("ok")
 	}
 }

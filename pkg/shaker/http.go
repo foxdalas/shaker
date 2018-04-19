@@ -8,31 +8,14 @@ import (
 )
 
 func makeHTTP(e RunJob) {
-	if e.lock.IsLocked() {
-		e.log = log.WithFields(log.Fields{
-			"context": "shaker",
-			"request": e.URL,
-		})
-		e.log.Infof("Job %s is already locked", e.Name)
-		return
-	}
 	ok, err := e.lock.Lock()
 	if err != nil {
-		e.log = log.WithFields(log.Fields{
-			"context": "shaker",
-			"request": e.URL,
-		})
 		e.log.Errorf("Can't create lock %s", err)
 		return
 	} else if !ok {
-		e.log = log.WithFields(log.Fields{
-			"context": "shaker",
-			"request": e.URL,
-		})
-		e.log.Errorf("Can't create lock for job %s", e.Name)
+		e.log.Debugf("Job %s is already locked", e.Name)
 		return
 	}
-
 	e.log.Debugf("Lock for job %s is created", e.Name)
 	
 	start := time.Now()
@@ -49,7 +32,6 @@ func makeHTTP(e RunJob) {
 		e.log = log.WithFields(log.Fields{
 			"description": e.Name,
 			"context":     "shaker",
-			"error":       err,
 			"request":     e.URL,
 			"method":      "GET",
 			"username":    e.Username,
