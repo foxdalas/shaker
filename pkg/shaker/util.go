@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+//MakeLog Create logging with fields
 func MakeLog() *log.Entry {
 	logtype := strings.ToLower(os.Getenv("LOG_TYPE"))
 	if logtype == "" {
@@ -47,21 +48,24 @@ func MakeLog() *log.Entry {
 	return log.WithField("context", "shaker")
 }
 
+//Log Entry
 func (s *Shaker) Log() *log.Entry {
 	return s.log
 }
 
+//Version return from Shaker struct
 func (s *Shaker) Version() string {
 	return s.version
 }
 
+//Run Job in routine
 func (s *Shaker) Run() {
-	for _, job := range s.Jobs {
+	for _, job := range s.jobs {
 		go job.Run()
 	}
 }
 
-func GetMD5Hash(text string) string {
+func getMD5Hash(text string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))

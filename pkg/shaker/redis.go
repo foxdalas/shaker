@@ -8,7 +8,7 @@ import (
 func (s *Shaker) createRedisConnections() {
 	connections := make(map[string]*redis.Client)
 
-	for name, info := range s.Config.Jobs.Redis.Storages {
+	for name, info := range s.config.Jobs.Redis.Storages {
 		connections[name] = redis.NewClient(&redis.Options{
 			Addr: info.Host + ":" + info.Port,
 		})
@@ -22,7 +22,7 @@ func (s *Shaker) createRedisConnections() {
 		}
 	}
 
-	s.RedisStorages = connections
+	s.connectors.redisStorages = connections
 }
 
 func makeRedis(e RunJob) {

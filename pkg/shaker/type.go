@@ -1,79 +1,87 @@
 package shaker
 
 import (
-	"github.com/go-redis/redis"
-	log "github.com/sirupsen/logrus"
-	"github.com/bsm/redis-lock"
 	"sync"
+
+	"github.com/bsm/redis-lock"
+	"github.com/go-redis/redis"
+	"github.com/nlopes/slack"
+	log "github.com/sirupsen/logrus"
 )
 
+//Shaker struct
 type Shaker struct {
-	version string
-	log     *log.Entry
-
-	Config *Config
-
-	bitbucketUser     string
-	bitbucketPassword string
-
-	configFile  string
-	stopCh      chan struct{}
-	waitGroup   sync.WaitGroup
-	redisClient *redis.Client
-	Jobs        []RunJob
-
-	RedisStorages map[string]*redis.Client
+	version    string
+	log        *log.Entry
+	config     config
+	connectors struct {
+		redisStorages map[string]*redis.Client
+		slackConfig   slackConfig
+	}
+	jobs      []RunJob
+	stopCh    chan struct{}
+	waitGroup sync.WaitGroup
 }
 
-type Config struct {
+type config struct {
 	Environment string `json:"environment"`
 	Role        string `json:"role"`
 	Storage     struct {
 		Redis struct {
+			Default struct {
+				Host     string `json:"host"`
+				Port     string `json:"port"`
+				Password string `json:"password"`
+			} `json:"default"`
 			Memory struct {
-				Host string `json:"host"`
-				Port int    `json:"port"`
+				Host     string `json:"host"`
+				Port     string `json:"port"`
+				Password string `json:"password"`
 			} `json:"memory"`
 			Pubsub struct {
-				Host string `json:"host"`
-				Port int    `json:"port"`
+				Host     string `json:"host"`
+				Port     string `json:"port"`
+				Password string `json:"password"`
 			} `json:"pubsub"`
 		} `json:"redis"`
 	} `json:"storage"`
-	Redis struct {
-		Host     string `json:"host"`
-		Port     string `json:"port"`
-		Password string `json:"password"`
-	} `json:"redis"`
+	Slack struct {
+		Enabled bool   `json:"enabled"`
+		Channel string `json:"channel"`
+		Token   string `json:"token"`
+	} `json:"slack"`
 	Jobs struct {
-		Http struct {
+		HTTP struct {
 			Dir string `json:"dir"`
 		} `json:"http"`
 		Redis struct {
-			Storages map[string]RedisStorage `json:"Storages"`
+			Storages map[string]redisStorage `json:"Storages"`
 			Dir      string                  `json:"dir"`
 		} `json:"redis"`
 	} `json:"jobs"`
-	Users map[string]User `json:"Users"`
+	Watch struct {
+		Dir string `json:"dir"`
+	} `json:"watch"`
+	Users map[string]user `json:"Users"`
 }
 
-type RedisStorage struct {
+type redisStorage struct {
 	Host string
 	Port string
 }
 
-type User struct {
+type user struct {
 	User     string
 	Password string
 }
 
-type Jobs struct {
+type jobs struct {
 	URL   string `json:"url"`
 	Redis string `json:"redis"`
-	Jobs  []Job  `json:"jobs"`
+	Jobs  []job  `json:"jobs"`
 }
 
-type Job struct {
+type job struct {
 	Name        string `json:"name"`
 	Cron        string `json:"cron"`
 	URI         string `json:"uri"`
@@ -85,6 +93,7 @@ type Job struct {
 	Message     string `json:"message"`
 }
 
+//RunJob structore for store job parameters
 type RunJob struct {
 	Name         string
 	URL          string
@@ -96,7 +105,14 @@ type RunJob struct {
 	Channel      string
 	Message      string
 	log          *log.Entry
-	lock		 *lock.Locker
+	lock         *lock.Locker
 	jobFile      string
 	redisStorage *redis.Client
+	slack        slackConfig
+}
+
+type slackConfig struct {
+	enabled bool
+	client  *slack.Client
+	channel string
 }

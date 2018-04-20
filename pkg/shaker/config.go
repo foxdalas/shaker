@@ -3,20 +3,23 @@ package shaker
 import (
 	"encoding/json"
 	"github.com/bamzi/jobrunner"
+	"github.com/bsm/redis-lock"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"github.com/bsm/redis-lock"
 	"time"
 )
 
-func (s *Shaker) getConfig() {
+func (s *Shaker) getConfig(configFile string) {
 	log := MakeLog()
-
-	config, err := ioutil.ReadFile(s.configFile)
+	s.Log().Infof("Reading configuration from %s", configFile)
+	config, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		log.Fatalf("Cant't read config file %s", s.configFile)
+		log.Fatalf("Cant't read config file %s", configFile)
 	}
-	yaml.Unmarshal(config, &s.Config)
+	err = yaml.Unmarshal(config, &s.config)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *Shaker) isValidConfig() bool {
@@ -28,13 +31,13 @@ func (s *Shaker) isValidConfig() bool {
 
 func (s *Shaker) validateConfigs(jobType string) bool {
 	var dir string
-	var jobs Jobs
+	var jobs jobs
 
 	switch jobType {
 	case "http":
-		dir = s.Config.Jobs.Http.Dir
+		dir = s.config.Jobs.HTTP.Dir
 	case "redis":
-		dir = s.Config.Jobs.Redis.Dir
+		dir = s.config.Jobs.Redis.Dir
 	}
 
 	s.log.Infof("Reading directory %s", dir)
@@ -63,7 +66,7 @@ func (s *Shaker) validateConfigs(jobType string) bool {
 }
 
 func (s *Shaker) readConfigDirectory(dir string, jobType string) {
-	var jobs Jobs
+	var jobs jobs
 
 	s.log.Infof("Reading directory %s", dir)
 	files, err := ioutil.ReadDir(dir)
@@ -118,7 +121,7 @@ func findRedisType(method string) string {
 	return "default"
 }
 
-func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
+func (s *Shaker) loadJobs(jobs jobs, jobFile string) {
 	for _, data := range jobs.Jobs {
 		lockTimeout := 0
 		if data.Method != "publish" {
@@ -134,12 +137,12 @@ func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
 
 		if len(data.Username) > 0 {
 			username = data.Username
-			if len(s.Config.Users[username].Password) > 0 {
-				password = s.Config.Users[username].Password
+			if len(s.config.Users[username].Password) > 0 {
+				password = s.config.Users[username].Password
 			}
 		}
 
-		locker := lock.New(s.redisClient, GetMD5Hash(urlFormater(jobs.URL, data.URI)), &lock.Options{
+		locker := lock.New(s.connectors.redisStorages["default"], getMD5Hash(urlFormater(jobs.URL, data.URI)), &lock.Options{
 			LockTimeout: time.Duration(lockTimeout) * time.Second,
 			RetryCount:  0,
 			RetryDelay:  time.Microsecond * 100})
@@ -157,7 +160,8 @@ func (s *Shaker) loadJobs(jobs Jobs, jobFile string) {
 			s.Log(),
 			locker,
 			jobFile,
-			s.RedisStorages[findRedisType(data.Method)],
+			s.connectors.redisStorages[findRedisType(data.Method)],
+			s.connectors.slackConfig,
 		})
 	}
 }

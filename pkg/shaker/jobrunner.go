@@ -2,6 +2,7 @@ package shaker
 
 import "github.com/bamzi/jobrunner"
 
+//Run jobs via Jobrunner
 func (e RunJob) Run() {
 	switch e.Type {
 	case "http":

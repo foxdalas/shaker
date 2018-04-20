@@ -11,6 +11,7 @@ import (
 
 var _ shaker.Shaker = &Shaker{}
 
+//New create struct for shaker
 func New(version string) *Shaker {
 	return &Shaker{
 		version:   version,
@@ -20,6 +21,7 @@ func New(version string) *Shaker {
 	}
 }
 
+//Init Shaker main functional
 func (s *Shaker) Init() {
 	s.Log().Infof("Shaker %s starting", s.version)
 
@@ -28,38 +30,40 @@ func (s *Shaker) Init() {
 		s.Log().Fatal(err)
 	}
 
-	s.getConfig()
+	if s.isSlackEnabled() {
+		s.createSlackConnection()
+	}
 	s.createRedisConnections()
 	s.getCronList()
-
-	go s.watchJobs()
+	if len(s.config.Watch.Dir) > 0 {
+		go s.watchJobs()
+	}
 }
 
 func (s *Shaker) params() error {
-	s.configFile = os.Getenv("CONFIG")
-	if len(s.configFile) == 0 {
+	if len(os.Getenv("CONFIG")) == 0 {
 		return errors.New("Please provide the secret key via environment variable CONFIG")
 	}
+	s.getConfig(os.Getenv("CONFIG"))
+
 	return nil
 }
 
 func (s *Shaker) getCronList() {
-	s.redisClient = s.redisConnect(s.Config.Redis.Host, s.Config.Redis.Port, s.Config.Redis.Password)
-	
 	//Checking configuration
 	if !s.isValidConfig() {
 		s.Log().Error("Error in configration")
 		return
 	}
-
+	//Cleanup jobs is configuration is valid
 	s.cleanupJobs()
 
-	s.readConfigDirectory(s.Config.Jobs.Http.Dir, "http")
-	s.readConfigDirectory(s.Config.Jobs.Redis.Dir, "redis")
+	//Add jobs from configuration files
+	s.readConfigDirectory(s.config.Jobs.HTTP.Dir, "http")
+	s.readConfigDirectory(s.config.Jobs.Redis.Dir, "redis")
 }
 
 func (s *Shaker) watchJobs() {
-
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -72,14 +76,17 @@ func (s *Shaker) watchJobs() {
 			select {
 			case event := <-watcher.Events:
 				s.Log().Infof("event:", event.String())
-				s.getCronList()
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					s.getCronList()
+					slackSendInfoMessage(s.connectors.slackConfig, "Configuration", "Apply", "", 0)
+				}
 			case err := <-watcher.Errors:
 				s.Log().Errorf("error: %s", err)
 			}
 		}
 	}()
 
-	err = watcher.Add(s.Config.Jobs.Http.Dir)
+	err = watcher.Add(s.config.Watch.Dir)
 	if err != nil {
 		log.Fatal(err)
 	}
