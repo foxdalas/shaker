@@ -18,7 +18,7 @@ func main() {
 	jobrunner.Start()
 
 	s := shaker.New(Version())
-	go s.Init()
+	s.Init()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
@@ -26,7 +26,6 @@ func main() {
 	logger := logrus.WithField("signal", signal.String())
 	logger.Debug("received signal")
 	Stop()
-
 }
 
 //Stop application
