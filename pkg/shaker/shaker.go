@@ -32,7 +32,9 @@ func (s *Shaker) Init() {
 
 	if s.isSlackEnabled() {
 		s.createSlackConnection()
+		slackSendInfoMessage(s.connectors.slackConfig, "Shaker service", "Started", "", 0)
 	}
+
 	s.createRedisConnections()
 	s.getCronList()
 	if len(s.config.Watch.Dir) > 0 {
