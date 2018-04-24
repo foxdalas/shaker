@@ -105,7 +105,7 @@ func findType(method string) string {
 }
 
 func findMethod(method string) string {
-	if len(method) > 0 {
+	if method != "" {
 		return method
 	}
 	return "get"
@@ -132,12 +132,12 @@ func (s *Shaker) loadJobs(jobs jobs, jobFile string) {
 		}
 		s.Log().Infof("Add job %s with lock timeout %d second from file %s", data.Name, lockTimeout, jobFile)
 
-		username := ""
-		password := ""
+		var username string
+		var password string
 
-		if len(data.Username) > 0 {
+		if data.Username != "" {
 			username = data.Username
-			if len(s.config.Users[username].Password) > 0 {
+			if s.config.Users[username].Password != "" {
 				password = s.config.Users[username].Password
 			}
 		}

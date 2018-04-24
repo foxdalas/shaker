@@ -34,7 +34,7 @@ func makeHTTP(e RunJob) {
 	if err != nil {
 		e.log.Error(err)
 	}
-	if len(e.Username) > 0 || len(e.Password) > 0 {
+	if e.Username != "" || e.Password != "" {
 		req.SetBasicAuth(e.Username, e.Password)
 	}
 	cli := &http.Client{}

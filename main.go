@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-var AppVersion = "unknown"
+var AppVersion = ""
 var AppGitCommit = ""
 var AppGitState = ""
 var stopCh chan struct{}
@@ -38,11 +38,11 @@ func Stop() {
 //Version helper
 func Version() string {
 	version := AppVersion
-	if len(AppGitCommit) > 0 {
+	if AppGitCommit != "" {
 		version += "-"
 		version += AppGitCommit[0:8]
 	}
-	if len(AppGitState) > 0 && AppGitState != "clean" {
+	if AppGitState != "" && AppGitState != "clean" {
 		version += "-"
 		version += AppGitState
 	}

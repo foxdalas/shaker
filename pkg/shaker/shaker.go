@@ -37,13 +37,13 @@ func (s *Shaker) Init() {
 
 	s.createRedisConnections()
 	s.getCronList()
-	if len(s.config.Watch.Dir) > 0 {
+	if s.config.Watch.Dir != "" {
 		go s.watchJobs()
 	}
 }
 
 func (s *Shaker) params() error {
-	if len(os.Getenv("CONFIG")) == 0 {
+	if os.Getenv("CONFIG") == "" {
 		return errors.New("Please provide the secret key via environment variable CONFIG")
 	}
 	s.getConfig(os.Getenv("CONFIG"))

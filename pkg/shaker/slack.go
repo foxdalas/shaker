@@ -57,7 +57,7 @@ func slackSendMessage(slackConfig slackConfig, name string, text string, color s
 		},
 	}
 
-	if len(url) > 0 {
+	if url != "" {
 		attachment.Fields = append(attachment.Fields,
 			slack.AttachmentField{
 				Title: "URL",

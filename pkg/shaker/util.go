@@ -32,7 +32,7 @@ func MakeLog() *log.Entry {
 	}
 
 	loglevel := strings.ToLower(os.Getenv("LOG_LEVEL"))
-	if len(loglevel) == 0 {
+	if loglevel == "" {
 		log.SetLevel(log.InfoLevel)
 	} else if loglevel == "debug" {
 		log.SetLevel(log.DebugLevel)
@@ -72,7 +72,7 @@ func getMD5Hash(text string) string {
 }
 
 func urlFormater(url string, uri string) string {
-	if len(url) > 0 && len(uri) > 0 {
+	if url != "" && uri != "" {
 		if url[len(url)-1:] != "/" && uri[:1] != "/" {
 			return url + "/" + uri
 		}
