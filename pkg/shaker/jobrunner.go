@@ -4,7 +4,7 @@ import "github.com/bamzi/jobrunner"
 
 //Run jobs via Jobrunner
 func (e RunJob) Run() {
-	switch e.Type {
+	switch e.request.requestType {
 	case "http":
 		makeHTTP(e)
 	case "redis":
