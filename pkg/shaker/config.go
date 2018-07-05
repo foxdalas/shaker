@@ -2,11 +2,14 @@ package shaker
 
 import (
 	"encoding/json"
-	"github.com/bamzi/jobrunner"
-	"github.com/bsm/redis-lock"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"strings"
 	"time"
+
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/bamzi/jobrunner"
+	lock "github.com/bsm/redis-lock"
 )
 
 func (s *Shaker) getConfig(configFile string) {
@@ -92,7 +95,7 @@ func (s *Shaker) readConfigDirectory(dir string, jobType string) {
 }
 
 func findType(method string) string {
-	switch method {
+	switch strings.ToLower(method) {
 	case "get":
 		return "http"
 	case "post":
@@ -106,7 +109,7 @@ func findType(method string) string {
 
 func findMethod(method string) string {
 	if method != "" {
-		return method
+		return strings.ToLower(method)
 	}
 	return "get"
 }
@@ -153,7 +156,8 @@ func (s *Shaker) loadJobs(jobs jobs, jobFile string) {
 		request := &request{
 			name:        data.Name,
 			url:         urlFormater(jobs.URL, data.URI),
-			method:      findMethod(data.Method),
+			httpMethod:  findMethod(data.Method),
+			httpBody:    data.HTTPBody,
 			requestType: findType(data.Method),
 			username:    username,
 			password:    password,

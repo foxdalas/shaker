@@ -2,6 +2,7 @@ package shaker
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -30,7 +31,15 @@ func makeHTTP(e RunJob) {
 	e.log.Debugf("Lock for job %s is created", e.request.name)
 
 	start := time.Now()
-	req, err := http.NewRequest("GET", e.request.url, nil)
+
+	var bodyReader io.Reader
+	method := httpMethod(e.request.httpMethod)
+	// create body reader if http method allows request body
+	if method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch {
+		bodyReader = strings.NewReader(string(e.request.httpBody))
+	}
+
+	req, err := http.NewRequest(httpMethod(e.request.httpMethod), e.request.url, bodyReader)
 	if err != nil {
 		e.log.Error(err)
 	}
@@ -85,4 +94,8 @@ func checkResponseBody(e RunJob, body string, elapsed float64) {
 	if strings.Contains(body, "<script") {
 		slackSendWarningMessage(e.clients.slackClient, e.request.name, "HTML in Response", e.request.url, elapsed)
 	}
+}
+
+func httpMethod(m string) string {
+	return strings.ToUpper(m)
 }

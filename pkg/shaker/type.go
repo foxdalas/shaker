@@ -1,9 +1,9 @@
 package shaker
 
 import (
+	"encoding/json"
 	"sync"
 
-	"github.com/bsm/redis-lock"
 	"github.com/go-redis/redis"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
@@ -82,22 +82,24 @@ type jobs struct {
 }
 
 type job struct {
-	Name        string `json:"name"`
-	Cron        string `json:"cron"`
-	URI         string `json:"uri"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
-	LockTimeout int    `json:"lock"`
-	Method      string `json:"method"`
-	Channel     string `json:"channel"`
-	Message     string `json:"message"`
+	Name        string          `json:"name"`
+	Cron        string          `json:"cron"`
+	URI         string          `json:"uri"`
+	Username    string          `json:"username"`
+	Password    string          `json:"password"`
+	LockTimeout int             `json:"lock"`
+	Method      string          `json:"method"`
+	Channel     string          `json:"channel"`
+	Message     string          `json:"message"`
+	HTTPBody    json.RawMessage `json:"http_body"`
 }
 
 //RunJob structure for store job parameters
 type request struct {
 	name        string //Cronjob Name
 	url         string //HTTP URL
-	method      string //TODO: Cleanup after refactoring
+	httpMethod  string
+	httpBody    json.RawMessage
 	requestType string //Request type GET/POST/Publish
 	username    string //HTTP Basic Auth username
 	password    string //HTTP Basic Auth password

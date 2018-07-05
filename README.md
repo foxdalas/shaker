@@ -59,6 +59,8 @@ users:
              "name": "Every day in 1 hour with user user1",
              "cron": "0 0 1 * * *",
              "uri": "api/myMethod4",
+             "http_method": "post",
+             "http_body": {}, // field is of type json.RawMessage that allowas {} or []
              "username": "user1"
          }
     ]
