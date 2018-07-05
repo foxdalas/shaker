@@ -12,11 +12,11 @@ import (
 
 func makeHTTP(e RunJob) {
 	e.log = log.WithFields(log.Fields{
-		"description": e.Name,
+		"description": e.request.name,
 		"context":     "shaker",
-		"request":     e.URL,
+		"request":     e.request.url,
 		"method":      "GET",
-		"username":    e.Username,
+		"username":    e.request.username,
 	})
 
 	ok, err := e.lock.Lock()
@@ -24,24 +24,24 @@ func makeHTTP(e RunJob) {
 		e.log.Errorf("Can't create lock %s", err)
 		return
 	} else if !ok {
-		e.log.Debugf("Job %s is already locked", e.Name)
+		e.log.Debugf("Job %s is already locked", e.request.name)
 		return
 	}
-	e.log.Debugf("Lock for job %s is created", e.Name)
+	e.log.Debugf("Lock for job %s is created", e.request.name)
 
 	start := time.Now()
-	req, err := http.NewRequest("GET", e.URL, nil)
+	req, err := http.NewRequest("GET", e.request.url, nil)
 	if err != nil {
 		e.log.Error(err)
 	}
-	if e.Username != "" || e.Password != "" {
-		req.SetBasicAuth(e.Username, e.Password)
+	if e.request.username != "" || e.request.password != "" {
+		req.SetBasicAuth(e.request.username, e.request.password)
 	}
 	cli := &http.Client{}
 	resp, err := cli.Do(req)
 	if err != nil {
 		e.log.Error(err)
-		slackSendErrorMessage(e.slack, e.Name, err.Error(), e.URL, 0)
+		slackSendErrorMessage(e.clients.slackClient, e.request.name, err.Error(), e.request.url, 0)
 		return
 	}
 	defer resp.Body.Close()
@@ -49,16 +49,16 @@ func makeHTTP(e RunJob) {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		e.log.Error(err)
-		slackSendErrorMessage(e.slack, e.Name, err.Error(), e.URL, elapsed)
+		slackSendErrorMessage(e.clients.slackClient, e.request.name, err.Error(), e.request.url, elapsed)
 		return
 	}
 	e.log = log.WithFields(log.Fields{
 		"context":       "shaker",
 		"response_code": resp.StatusCode,
 		"response_time": elapsed,
-		"request":       e.URL,
+		"request":       e.request.url,
 		"method":        "GET",
-		"username":      e.Username,
+		"username":      e.request.username,
 	})
 	e.log.Info(string(body))
 
@@ -70,19 +70,19 @@ func checkResponseStatusCode(e RunJob, code int, elapsed float64) {
 	message := fmt.Sprintf("Response code: %d", code)
 
 	if code > 299 && code < 400 {
-		slackSendWarningMessage(e.slack, e.Name, message, e.URL, elapsed)
+		slackSendWarningMessage(e.clients.slackClient, e.request.name, message, e.request.url, elapsed)
 	}
 
 	if code > 399 && code < 500 {
-		slackSendWarningMessage(e.slack, e.Name, message, e.URL, elapsed)
+		slackSendWarningMessage(e.clients.slackClient, e.request.name, message, e.request.url, elapsed)
 	}
 	if code > 499 {
-		slackSendErrorMessage(e.slack, e.Name, message, e.URL, elapsed)
+		slackSendErrorMessage(e.clients.slackClient, e.request.url, message, e.request.url, elapsed)
 	}
 }
 
 func checkResponseBody(e RunJob, body string, elapsed float64) {
 	if strings.Contains(body, "<script") {
-		slackSendWarningMessage(e.slack, e.Name, "HTML in Response", e.URL, elapsed)
+		slackSendWarningMessage(e.clients.slackClient, e.request.name, "HTML in Response", e.request.url, elapsed)
 	}
 }

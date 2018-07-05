@@ -76,9 +76,9 @@ type user struct {
 }
 
 type jobs struct {
-	URL   string `json:"url"`
-	Redis string `json:"redis"`
-	Jobs  []job  `json:"jobs"`
+	URL string `json:"url"`
+	//Redis string `json:"redis"`
+	Jobs []job `json:"jobs"`
 }
 
 type job struct {
@@ -93,22 +93,30 @@ type job struct {
 	Message     string `json:"message"`
 }
 
-//RunJob structore for store job parameters
-type RunJob struct {
-	Name         string
-	URL          string
-	RedisClient  string
-	Type         string
-	Method       string
-	Username     string
-	Password     string
-	Channel      string
-	Message      string
-	log          *log.Entry
-	lock         *lock.Locker
-	jobFile      string
+//RunJob structure for store job parameters
+type request struct {
+	name        string //Cronjob Name
+	url         string //HTTP URL
+	method      string //TODO: Cleanup after refactoring
+	requestType string //Request type GET/POST/Publish
+	username    string //HTTP Basic Auth username
+	password    string //HTTP Basic Auth password
+	channel     string //Redis Channel
+	message     string //Redis Message
+}
+
+type clients struct {
+	redisClient  string
 	redisStorage *redis.Client
-	slack        slackConfig
+	slackClient  slackConfig
+}
+
+type RunJob struct {
+	log  *log.Entry
+	lock *lock.Locker
+
+	request request
+	clients *clients
 }
 
 type slackConfig struct {

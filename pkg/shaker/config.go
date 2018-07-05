@@ -122,6 +122,7 @@ func findRedisType(method string) string {
 }
 
 func (s *Shaker) loadJobs(jobs jobs, jobFile string) {
+
 	for _, data := range jobs.Jobs {
 		lockTimeout := 0
 		if data.Method != "publish" {
@@ -142,26 +143,36 @@ func (s *Shaker) loadJobs(jobs jobs, jobFile string) {
 			}
 		}
 
+		//Creating redis lock
 		locker := lock.New(s.connectors.redisStorages["default"], getMD5Hash(urlFormater(jobs.URL, data.URI)), &lock.Options{
 			LockTimeout: time.Duration(lockTimeout) * time.Second,
 			RetryCount:  0,
 			RetryDelay:  time.Microsecond * 100})
 
+		//Creating request
+		request := &request{
+			name:        data.Name,
+			url:         urlFormater(jobs.URL, data.URI),
+			method:      findMethod(data.Method),
+			requestType: findType(data.Method),
+			username:    username,
+			password:    password,
+			channel:     data.Channel,
+			message:     data.Message,
+		}
+
+		//Creating Clients
+		clients := &clients{
+			redisStorage: s.connectors.redisStorages[findRedisType(data.Method)],
+			slackClient:  s.connectors.slackConfig,
+		}
+
+		//Creating Job with all parameters
 		jobrunner.Schedule(data.Cron, RunJob{
-			data.Name,
-			urlFormater(jobs.URL, data.URI),
-			jobs.Redis,
-			findType(data.Method),
-			findMethod(data.Method),
-			username,
-			password,
-			data.Channel,
-			data.Message,
-			s.Log(),
-			locker,
-			jobFile,
-			s.connectors.redisStorages[findRedisType(data.Method)],
-			s.connectors.slackConfig,
+			log:     s.Log(),
+			lock:    locker,
+			request: *request,
+			clients: clients,
 		})
 	}
 }
