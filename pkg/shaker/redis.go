@@ -30,11 +30,11 @@ func makeRedis(e RunJob) {
 		"description": e.request.name,
 		"context":     "shaker",
 		"channel":     e.request.channel,
-		"method":      e.request.method,
+		"method":      e.request.requestType,
 		"type":        "redis",
 	})
 
-	if e.request.method == "publish" {
+	if e.request.requestType == "publish" {
 		client := e.clients.redisStorage
 		err := client.Publish(e.request.channel, e.request.message).Err()
 		if err != nil {

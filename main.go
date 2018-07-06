@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/bamzi/jobrunner"
-	"github.com/foxdalas/shaker/pkg/shaker"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/aksentyev/shaker/pkg/shaker"
+	"github.com/bamzi/jobrunner"
+	"github.com/sirupsen/logrus"
 )
 
 var AppVersion = ""

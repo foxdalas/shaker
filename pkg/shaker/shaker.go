@@ -2,14 +2,14 @@ package shaker
 
 import (
 	"errors"
-	"github.com/foxdalas/shaker/pkg/shaker_const"
-	"github.com/fsnotify/fsnotify"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"sync"
+
+	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
 )
 
-var _ shaker.Shaker = &Shaker{}
+var _ *Shaker = &Shaker{}
 
 //New create struct for shaker
 func New(version string) *Shaker {

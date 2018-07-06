@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	lock "github.com/bsm/redis-lock"
 	"github.com/go-redis/redis"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
