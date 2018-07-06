@@ -16,7 +16,7 @@ func makeHTTP(e RunJob) {
 		"description": e.request.name,
 		"context":     "shaker",
 		"request":     e.request.url,
-		"method":      "GET",
+		"method":      e.request.httpMethod,
 		"username":    e.request.username,
 	})
 
