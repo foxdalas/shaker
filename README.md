@@ -46,9 +46,10 @@ users:
             "uri": "api/myMethod1"
          },
          {
-             "name": "Every minute in 0 second 2",
+             "name": "Every minute in 0 second 2 with 10 second timeout",
              "cron": "0 */1 * * * *",
-             "uri": "api/myMethod2"
+             "uri": "api/myMethod2",
+             "timeout": 10
          },
          {
              "name": "Every 4 minutes in 0 second",

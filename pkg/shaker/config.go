@@ -159,6 +159,7 @@ func (s *Shaker) loadJobs(jobs jobs, jobFile string) {
 			password:    password,
 			channel:     data.Channel,
 			message:     data.Message,
+			timeout:     time.Duration(data.Timeout) * time.Second,
 		}
 
 		//Creating Clients

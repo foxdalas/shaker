@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 //Shaker struct
@@ -91,6 +92,7 @@ type job struct {
 	Method      string `json:"method"`
 	Channel     string `json:"channel"`
 	Message     string `json:"message"`
+	Timeout     int    `json:"timeout"`
 }
 
 //RunJob structure for store job parameters
@@ -103,6 +105,7 @@ type request struct {
 	password    string //HTTP Basic Auth password
 	channel     string //Redis Channel
 	message     string //Redis Message
+	timeout     time.Duration //Request timeout
 }
 
 type clients struct {
