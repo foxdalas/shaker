@@ -2,12 +2,12 @@ package shaker
 
 import (
 	"sync"
+	"time"
 
 	"github.com/bsm/redis-lock"
 	"github.com/go-redis/redis"
 	"github.com/nlopes/slack"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 //Shaker struct
