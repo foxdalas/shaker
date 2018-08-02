@@ -76,9 +76,8 @@ type user struct {
 }
 
 type jobs struct {
-	URL string `json:"url"`
-	//Redis string `json:"redis"`
-	Jobs []job `json:"jobs"`
+	URL  string `json:"url"`
+	Jobs []job  `json:"jobs"`
 }
 
 type job struct {
