@@ -110,6 +110,7 @@ type clients struct {
 	slackClient  slackConfig
 }
 
+// RunJob struct for cron-like jobs
 type RunJob struct {
 	log  *log.Entry
 	lock *lock.Locker

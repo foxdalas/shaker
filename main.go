@@ -9,9 +9,12 @@ import (
 	"syscall"
 )
 
-var AppVersion = ""
-var AppGitCommit = ""
-var AppGitState = ""
+// AppVersion variable for LDFLAG
+var AppVersion string 
+// AppGitCommit variable for LDFLAG
+var AppGitCommit string
+// AppGitState variable for LDFLAG
+var AppGitState string
 var stopCh chan struct{}
 
 func main() {
